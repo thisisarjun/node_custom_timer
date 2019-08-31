@@ -1,3 +1,7 @@
 # node_timer
+---
+Register an event with a key and time
 
-Cron -&gt; node_timer -&gt; publish event
+timer will publish an SNS event when time expires.
+
+Cron/tick --> node_timer --> publish event
