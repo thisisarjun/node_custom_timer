@@ -12,5 +12,8 @@
   },
   "author": "",
   "license": "ISC",
-  "homepage": "https://bitbucket.org/tricog/node_timer#readme"
+  "homepage": "https://bitbucket.org/tricog/node_timer#readme",
+  "dependencies": {
+    "redis": "^2.8.0"
+  }
 }
