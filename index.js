@@ -9,6 +9,7 @@ const {
 	getKeysInRange
 } = require('./utils/redisHelper');
 const TIMER_KEY = 'node_timer_key';
+const q = require('q');
 
 
 class nodeTimer {
@@ -21,27 +22,27 @@ class nodeTimer {
 		};
 		this.redisClient = redis.createClient(this.redis.port, this.redis.host);
 				
-		this.aws.accessKeyId = options.awsAccessKeyId;
+		/*this.aws.accessKeyId = options.awsAccessKeyId;
 		this.aws.secretAccessKey = options.awsAccessKeyId;
 		this.aws.region = options.awsRegion;
-		this.SNS = new aws.SNS(this.aws);
+		this.SNS = new aws.SNS(this.aws);*/
 
 		this.timerKey = this.timerKey || TIMER_KEY;
 	}
 
-	async addTimerEvent(key, time){		
+	async addTimerEvent(key, time){				
 		try{
 			if(!key || !time){
 				throw new Error('Needs a key and time');
 			}
-			let isKeyExists = await checkIfKeyExists(key);
+			let isKeyExists = await checkIfKeyExists(this.redisClient, this.timerKey, key);
 			if(isKeyExists){
 				throw new Error('Duplicate Key');
 			}
 			if(typeof time == 'object'){
 				time = new Date(time).getTime();
 			}
-			let args = [this.timerKey, key, time];
+			let args = [this.timerKey, time, key];
 			await addKey(this.redisClient, args);
 		}catch(err){
 			throw err;
@@ -54,13 +55,17 @@ class nodeTimer {
 			let currentTime = new Date().getTime();
 			let min = 0;
 			let max = currentTime;
-			let keys = await getKeysInRange(this.timerKey, min, max);
+			let keys = await getKeysInRange(this.redisClient, this.timerKey, min, max);
+			console.log("keys : ", keys);
 			let promises = [];
-			keys.forEach(keys, (key) => {
+
+			keys.forEach((key) => {				
 				promises.push(publishMessage(key));
 			});
 
-			let results = await Promise.allSettled(promises);
+			let results = await q.allSettled(promises);
+
+			console.log(results);
 			/*
 				TODO : insert into error lrange
 				a retry mechanism to publish on errored ones.
@@ -75,6 +80,4 @@ class nodeTimer {
 
 }
 
-module.exports = {
-	nodeTimer	
-};
+module.exports = nodeTimer;

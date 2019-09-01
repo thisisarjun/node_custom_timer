@@ -1,7 +1,7 @@
 const q = require('q');
 
 
-function checkIfKeyExists(redisClient, key){
+/*function checkIfKeyExists(redisClient, key){
 
 	var defer = q.defer();
 	var isExist;
@@ -17,7 +17,7 @@ function checkIfKeyExists(redisClient, key){
 	});
 
 	return defer.promise;
-}
+}*/
 
 function fetchKey(redisClient, key){
 	var defer = q.defer();
@@ -43,6 +43,25 @@ function setKey(redisClient, key, value){
 			return defer.reject(err);
 		}else{			
 			return defer.resolve(data);
+		}
+	});
+
+	return defer.promise;
+}
+
+
+function checkIfKeyExists(redisClient, timer_key, key){
+
+	var defer = q.defer();
+	var isExist;
+	
+	redisClient.zscore(timer_key, key, (err, exists) => {
+
+		if(err){
+			return defer.reject(err);
+		}else{
+			isExist = !!exists;
+			return defer.resolve(isExist);
 		}
 	});
 
@@ -83,11 +102,12 @@ function removeKey(redisClient, timer_key, key){
 
 }
 
-function getKeysInRange(redisClient,timer_key, min, max){	
+function getKeysInRange(redisClient, timer_key, min = '-inf', max){	
 
 	var defer = q.defer();
 
-	let args = [timer_key, max, min];
+
+	let args = [timer_key, min, max];
 	redisClient.zrangebyscore(args, (err, data) => {
 
 		if(err){
@@ -105,7 +125,6 @@ function getKeysInRange(redisClient,timer_key, min, max){
 
 
 module.exports = {	
-	deleteKey,
 	checkIfKeyExists,
 	fetchKey,
 	setKey,
