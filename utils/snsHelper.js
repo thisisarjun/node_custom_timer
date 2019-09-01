@@ -1,12 +1,6 @@
-const aws = require('aws-sdk');
-
-const config = require('../config/config');
-const snsConfig = config.snsParams;
-const SNS = new aws.SNS(snsConfig);
-
 const q = require('q');
 
-function publishMessage (message, topic, subject) {
+function publishMessage (SNS, message, topic, subject) {
   const defer = q.defer();
 
   if (typeof message !== 'string') {
