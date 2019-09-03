@@ -1,23 +1,14 @@
 const q = require('q');
+const redis = require('redis');
 
+function createClient(port, host){
 
-/*function checkIfKeyExists(redisClient, key){
-
-	var defer = q.defer();
-	var isExist;
-	
-	redisClient.exists(key, (err, exists) => {
-
-		if(err){
-			return defer.reject(err);
-		}else{
-			isExist = !!exists;
-			return defer.resolve(isExist);
-		}
-	});
-
-	return defer.promise;
-}*/
+	try{
+		redis.createClient(port, host);
+	}catch(e){
+		throw e;
+	}
+}
 
 function fetchKey(redisClient, key){
 	var defer = q.defer();
@@ -102,7 +93,7 @@ function removeKey(redisClient, timer_key, key){
 
 }
 
-function getKeysInRange(redisClient, timer_key, min = '-inf', max){	
+function getKeysInRange(redisClient, timer_key, min = '-inf', max = 1){	
 
 	var defer = q.defer();
 
@@ -125,9 +116,11 @@ function getKeysInRange(redisClient, timer_key, min = '-inf', max){
 
 
 module.exports = {	
+	createClient,
 	checkIfKeyExists,
 	fetchKey,
 	setKey,
 	addKey,
-	getKeysInRange		
+	getKeysInRange,
+	removeKey		
 };

@@ -1,10 +1,10 @@
 {
   "name": "node_timer",
   "version": "1.0.0",
-  "description": "A simple timer based on ticks and will publish events",
+  "description": "A simple timer based on ticks and will publish SNS events",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha tests/main.js"
   },
   "repository": {
     "type": "git",
@@ -17,5 +17,9 @@
     "aws-sdk": "^2.521.0",
     "q": "^1.5.1",
     "redis": "^2.8.0"
+  },
+  "devDependencies": {
+    "rewire": "^4.0.1",
+    "sinon": "^7.4.2"
   }
 }
