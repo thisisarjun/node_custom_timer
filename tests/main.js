@@ -5,8 +5,6 @@ const sinon = require('sinon');
 const q = require('q');
 
 let timer;
-let redisHelper;
-let snsHelper;
 
 
 describe("Process Timer", () => {
@@ -14,26 +12,20 @@ describe("Process Timer", () => {
 	let nodeTimer, redisMock, awsMock, publishMessageMock, getKeysInRangeMock, removeKeyMock ;
 
 	before(() => {
-		timer = rewire(path.join(__dirname,'../index'));
-		redisHelper = rewire(path.join(__dirname, '../utils/redisHelper'))		
-		snsHelper = rewire(path.join(__dirname, '../utils/snsHelper'));
+		timer = rewire(path.join(__dirname,'../index'));		
 	});
 
 	beforeEach(() => {
 
-		redisMock = {
-			createClient: function(port, host){
+		redisMock = function(port, host){
 				return true;
-			}
-		};
-		redisHelper.__set__("createClient", redisMock);
+		};		
+		timer.__set__("createClient", redisMock);
 
-		awsMock = {
-			SNS: function(){
+		awsMock = function(){
 				return {};
-			}
-		};
-		snsHelper.__set__("createSNSObject", awsMock);
+		};		
+		timer.__set__("createSNSObject", awsMock);
 		
 
 		getKeysInRangeMock = function(client, timer, min, max){
