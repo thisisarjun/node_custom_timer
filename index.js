@@ -10,6 +10,7 @@ const {
 	removeKey
 } = require('./utils/redisHelper');
 const TIMER_KEY = 'node_timer_key';
+const SNS_SUBJECT = 'timer_alert';
 const q = require('q');
 
 
@@ -23,6 +24,10 @@ class nodeTimer {
 		};
 		this.redisClient = createClient(this.redis.port, this.redis.host);
 
+		if(!options.topic){
+			throw new Error('Topic is mandatory');
+		}			
+
 		this.aws = {};				
 		this.aws.accessKeyId = options.awsAccessKeyId;
 		this.aws.secretAccessKey = options.awsSecretAccessKey;
@@ -30,8 +35,10 @@ class nodeTimer {
 		this.SNS = createSNSObject(this.aws);
 
 		this.errored_keys = [];
-		this.non_deleted_keys = []; //these are 
-		this.timerKey = this.timerKey || TIMER_KEY;
+		this.non_deleted_keys = []; //keys to be deleted, which failed in the last tick
+		this.timerKey = options.timerKey || TIMER_KEY;
+		this.topic = options.topic;
+		this.subject = options.subject || SNS_SUBJECT;
 	}
 
 	async addTimerEvent(key, time){
@@ -62,7 +69,7 @@ class nodeTimer {
 			let promises = [];
 			
 			keys.forEach((key) => {				
-				(this.non_deleted_keys.indexOf(key) < 0) && promises.push(publishMessage(key));
+				(this.non_deleted_keys.indexOf(key) < 0) && promises.push(publishMessage(this.SNS, key, this.topic));
 			});
 
 			if(promises.length == 0){

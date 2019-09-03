@@ -57,7 +57,8 @@ describe("Process Timer", () => {
 			redisHost: 'localhost',
 			awsAccessKeyId: 'bka',
 			awsSecretAccessKey: 'asdasd',
-			awsRegion: 'bla'
+			awsRegion: 'bla',
+			topic: 'blabla'
 		});
 	});
 
@@ -221,7 +222,8 @@ describe("Add Timer", () => {
 			redisHost: 'localhost',
 			awsAccessKeyId: 'bka',
 			awsSecretAccessKey: 'asdasd',
-			awsRegion: 'bla'
+			awsRegion: 'bla',
+			topic: 'blabla'
 		});
 	});
 
