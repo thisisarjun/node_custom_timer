@@ -1,5 +1,5 @@
-const aws = require('aws-sdk');
 const {
+	createSNSObject,
 	publishMessage
 } = require('./utils/snsHelper');
 const {
@@ -27,13 +27,14 @@ class nodeTimer {
 		this.aws.accessKeyId = options.awsAccessKeyId;
 		this.aws.secretAccessKey = options.awsSecretAccessKey;
 		this.aws.region = options.awsRegion;
-		this.SNS = new aws.SNS(this.aws);
+		this.SNS = createSNSObject(this.aws);
+
 		this.errored_keys = [];
 		this.non_deleted_keys = []; //these are 
 		this.timerKey = this.timerKey || TIMER_KEY;
 	}
 
-	async addTimerEvent(key, time){				
+	async addTimerEvent(key, time){
 		try{
 			if(!key || !time){
 				throw new Error('Needs a key and time');

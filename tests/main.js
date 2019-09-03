@@ -5,6 +5,8 @@ const sinon = require('sinon');
 const q = require('q');
 
 let timer;
+let redisHelper;
+let snsHelper;
 
 
 describe("Process Timer", () => {
@@ -12,8 +14,9 @@ describe("Process Timer", () => {
 	let nodeTimer, redisMock, awsMock, publishMessageMock, getKeysInRangeMock, removeKeyMock ;
 
 	before(() => {
-		timer = rewire(path.join(__dirname,'../index'));				
-
+		timer = rewire(path.join(__dirname,'../index'));
+		redisHelper = rewire(path.join(__dirname, '../utils/redisHelper'))		
+		snsHelper = rewire(path.join(__dirname, '../utils/snsHelper'));
 	});
 
 	beforeEach(() => {
@@ -23,14 +26,14 @@ describe("Process Timer", () => {
 				return true;
 			}
 		};
-		timer.__set__("redis", redisMock);
+		redisHelper.__set__("createClient", redisMock);
 
 		awsMock = {
 			SNS: function(){
 				return {};
 			}
 		};
-		timer.__set__("aws", awsMock);
+		snsHelper.__set__("createSNSObject", awsMock);
 		
 
 		getKeysInRangeMock = function(client, timer, min, max){
@@ -74,7 +77,7 @@ describe("Process Timer", () => {
 	it("it should be successfull if everything is successfull", async () => {
 		
 		try{
-			await nodeTimer.processTimer();						
+			await nodeTimer.processTimer();			
 		}catch(err){
 			throw err;
 		}
@@ -97,7 +100,7 @@ describe("Process Timer", () => {
 	it("it wont call publishMessage if non deleted keys", async () => {
 				
 		try{
-			let publishStub = sinon.stub();			
+			let publishStub = sinon.stub();
 			publishStub.resolves('ok');
 			timer.__set__('publishMessage', publishStub);			
 
@@ -117,14 +120,13 @@ describe("Process Timer", () => {
 	it("If publishMessage throw errors are there, it should throw an error", async () => {
 				
 		try{
-			let publishStub = sinon.stub();			
+			let publishStub = sinon.stub();	
 			publishStub.rejects('Errored');
 			timer.__set__('publishMessage', publishStub);			
 
 			let getKeysStub = sinon.stub();
 			getKeysStub.resolves(['1', '2', '3']);
-			timer.__set__('getKeysInRange', getKeysStub);
-			
+			timer.__set__('getKeysInRange', getKeysStub);			
 			await nodeTimer.processTimer();			
 
 		}catch(err){			
@@ -134,6 +136,7 @@ describe("Process Timer", () => {
 
 
 	it("If removing from redis throws an error, non_deleted_keys should be populated with the keys", async () => {
+
 		console.log("---");
 		console.log("---");
 		console.log("---");
