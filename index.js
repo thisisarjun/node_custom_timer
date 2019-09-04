@@ -91,8 +91,6 @@ class nodeTimer {
 
 			let results = await q.allSettled(promises);
 
-			console.log(results);
-
 			let successKeys = [], erroredKeys = [];
 			results.forEach((result) => {
 				if(result.state == 'fulfilled'){
