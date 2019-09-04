@@ -4,7 +4,7 @@ const redis = require('redis');
 function createClient(port, host){
 
 	try{
-		redis.createClient(port, host);
+		return redis.createClient(port, host);
 	}catch(e){
 		throw e;
 	}

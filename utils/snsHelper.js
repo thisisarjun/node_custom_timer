@@ -30,7 +30,7 @@ function publishMessage (SNS, message, topic, subject) {
     if (err) {
       return defer.reject(err);
     }
-    defer.resolve(`Published with MessageId :  ${data.MessageId}`);
+    defer.resolve(message);
   });
 
   return defer.promise;

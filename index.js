@@ -18,15 +18,27 @@ class nodeTimer {
 
 	constructor(options){
 
+		if(!options){
+			throw new Error('options is mandatory');
+		}
+
+		if(!options.redisPort || !options.redisHost){
+			throw new Error('Incorrect redis options, should pass port and host');
+		}
+
+		if(!options.awsAccessKeyId || !options.awsSecretAccessKey || !options.awsRegion){
+			throw new Error('aws parameters are not complete, make sure accesskey, secretkey and region are passed');
+		}
+		if(!options.topic){
+			throw new Error('Topic is mandatory');
+		}
+
 		this.redis = {
 			port: options.redisPort,
 			host: options.redisHost
 		};
 		this.redisClient = createClient(this.redis.port, this.redis.host);
-
-		if(!options.topic){
-			throw new Error('Topic is mandatory');
-		}			
+					
 
 		this.aws = {};				
 		this.aws.accessKeyId = options.awsAccessKeyId;
@@ -64,10 +76,11 @@ class nodeTimer {
 		try{
 			let currentTime = new Date().getTime();
 			let min = 0;
-			let max = currentTime;
+			let max = currentTime;			
+
 			let keys = await getKeysInRange(this.redisClient, this.timerKey, min, max);
 			let promises = [];
-			
+
 			keys.forEach((key) => {				
 				(this.non_deleted_keys.indexOf(key) < 0) && promises.push(publishMessage(this.SNS, key, this.topic));
 			});
@@ -78,25 +91,21 @@ class nodeTimer {
 
 			let results = await q.allSettled(promises);
 
-			// console.log(results);
+			console.log(results);
 
-			let successKeys = [];
+			let successKeys = [], erroredKeys = [];
 			results.forEach((result) => {
 				if(result.state == 'fulfilled'){
 					successKeys.push(result.value);
+				}else{
+					erroredKeys.push(result);
 				}	
 			});			
-
-			let erroredKeys = [];
-			keys.forEach((value) => {
-				if(successKeys.indexOf(value) < 0){
-					erroredKeys.push(value);
-				}
-			});
 
 			try{
 				if(successKeys.length > 0){
 					await removeKey(this.redisClient, this.timerKey, this.non_deleted_keys.concat(successKeys));
+					this.non_deleted_keys = [];
 				}
 			}catch(err){
 				this.non_deleted_keys = this.non_deleted_keys.concat(successKeys);
@@ -104,7 +113,7 @@ class nodeTimer {
 			}			
 
 			if(erroredKeys.length > 0){ // do not delete these, the events should be published in the next tick				
-				throw new Error('Failed to Publish Event for following keys ' + erroredKeys.join(','));
+				throw new Error('Failed to Publish Event for following keys ' + JSON.stringify(erroredKeys));
 			}
 						
 		}catch(err){

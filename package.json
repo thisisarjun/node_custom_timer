@@ -1,5 +1,5 @@
 {
-  "name": "node_timer",
+  "name": "node_custom_timer",
   "version": "1.0.0",
   "description": "A simple timer based on ticks and will publish SNS events",
   "main": "index.js",
