@@ -1,6 +1,6 @@
 {
   "name": "node_custom_timer",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A simple timer based on ticks and will publish SNS events",
   "main": "index.js",
   "scripts": {
