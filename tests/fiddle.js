@@ -11,7 +11,6 @@ let options = {
 
 let node_timer = require('../index');
 let nodeTimer = new node_timer(options) ;
-let moment = require('moment');
 
 let key = 'Task3';
 let time = new Date();
