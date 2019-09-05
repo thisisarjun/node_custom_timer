@@ -2,12 +2,10 @@ const q = require('q');
 const aws = require('aws-sdk');
 
 function createSNSObject(snsOption){
-  try{
-    let sns = new aws.SNS(snsOption);
-    return sns;
-  }catch(err){
-    throw err;
-  }
+  
+  let sns = new aws.SNS(snsOption);
+  return sns;
+
 }
 
   

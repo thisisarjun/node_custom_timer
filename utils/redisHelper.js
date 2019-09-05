@@ -2,12 +2,9 @@ const q = require('q');
 const redis = require('redis');
 
 function createClient(port, host){
+	
+	return redis.createClient(port, host);
 
-	try{
-		return redis.createClient(port, host);
-	}catch(e){
-		throw e;
-	}
 }
 
 function fetchKey(redisClient, key){

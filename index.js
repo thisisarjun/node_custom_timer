@@ -54,69 +54,65 @@ class nodeTimer {
 	}
 
 	async addTimerEvent(key, time){
-		try{
-			if(!key || !time){
-				throw new Error('Needs a key and time');
-			}
-			let isKeyExists = await checkIfKeyExists(this.redisClient, this.timerKey, key);
-			if(isKeyExists){
-				throw new Error('Duplicate Key');
-			}
-			if(typeof time == 'object'){
-				time = new Date(time).getTime();
-			}
-			let args = [this.timerKey, time, key];
-			await addKey(this.redisClient, args);
-		}catch(err){
-			throw err;
-		}	
+		
+		if(!key || !time){
+			throw new Error('Needs a key and time');
+		}
+		let isKeyExists = await checkIfKeyExists(this.redisClient, this.timerKey, key);
+		if(isKeyExists){
+			throw new Error('Duplicate Key');
+		}
+		if(typeof time == 'object'){
+			time = new Date(time).getTime();
+		}
+		let args = [this.timerKey, time, key];
+		await addKey(this.redisClient, args);
+			
 	}
 
 	async processTimer(){
-		try{
-			let currentTime = new Date().getTime();
-			let min = 0;
-			let max = currentTime;			
 
-			let keys = await getKeysInRange(this.redisClient, this.timerKey, min, max);
-			let promises = [];
+		let currentTime = new Date().getTime();
+		let min = 0;
+		let max = currentTime;			
 
-			keys.forEach((key) => {				
-				(this.non_deleted_keys.indexOf(key) < 0) && promises.push(publishMessage(this.SNS, key, this.topic));
-			});
+		let keys = await getKeysInRange(this.redisClient, this.timerKey, min, max);
+		let promises = [];
 
-			if(promises.length == 0){
-				return;
-			}
+		keys.forEach((key) => {				
+			(this.non_deleted_keys.indexOf(key) < 0) && promises.push(publishMessage(this.SNS, key, this.topic));
+		});
 
-			let results = await q.allSettled(promises);
-
-			let successKeys = [], erroredKeys = [];
-			results.forEach((result) => {
-				if(result.state == 'fulfilled'){
-					successKeys.push(result.value);
-				}else{
-					erroredKeys.push(result);
-				}	
-			});			
-
-			try{
-				if(successKeys.length > 0){
-					await removeKey(this.redisClient, this.timerKey, this.non_deleted_keys.concat(successKeys));
-					this.non_deleted_keys = [];
-				}
-			}catch(err){
-				this.non_deleted_keys = this.non_deleted_keys.concat(successKeys);
-				this.non_deleted_keys.filter((value, index, arr) => arr.indexOf(value) == index); //only unique elements
-			}			
-
-			if(erroredKeys.length > 0){ // do not delete these, the events should be published in the next tick				
-				throw new Error('Failed to Publish Event for following keys ' + JSON.stringify(erroredKeys));
-			}
-						
-		}catch(err){
-			throw err;
+		if(promises.length == 0){
+			return;
 		}
+
+		let results = await q.allSettled(promises);
+
+		let successKeys = [], erroredKeys = [];
+		results.forEach((result) => {
+			if(result.state == 'fulfilled'){
+				successKeys.push(result.value);
+			}else{
+				erroredKeys.push(result);
+			}	
+		});			
+
+		try{
+			if(successKeys.length > 0){
+				await removeKey(this.redisClient, this.timerKey, this.non_deleted_keys.concat(successKeys));
+				this.non_deleted_keys = [];
+			}
+		}catch(err){
+			this.non_deleted_keys = this.non_deleted_keys.concat(successKeys);
+			this.non_deleted_keys.filter((value, index, arr) => arr.indexOf(value) == index); //only unique elements
+		}			
+
+		if(erroredKeys.length > 0){ // do not delete these, the events should be published in the next tick				
+			throw new Error('Failed to Publish Event for following keys ' + JSON.stringify(erroredKeys));
+		}
+						
+		
 
 
 	}
