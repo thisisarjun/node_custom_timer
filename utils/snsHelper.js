@@ -1,4 +1,3 @@
-const q = require('q');
 const aws = require('aws-sdk');
 
 function createSNSObject(snsOption){
@@ -10,28 +9,28 @@ function createSNSObject(snsOption){
 
   
 function publishMessage (SNS, message, topic, subject) {
-  const defer = q.defer();
 
-  if (typeof message !== 'string') {
-    message = JSON.stringify(message);
-  }
-  let params = {
-    TargetArn: topic,
-    Message: message
-  };
-
-  if (subject) {
-    params.Subject = subject;
-  }
-
-  SNS.publish(params, (err, data) => {
-    if (err) {
-      return defer.reject(err);
+  return new Promise((resolve, reject) => {
+    if (typeof message !== 'string') {
+      message = JSON.stringify(message);
     }
-    defer.resolve(message);
+    let params = {
+      TargetArn: topic,
+      Message: message
+    };
+
+    if (subject) {
+      params.Subject = subject;
+    }
+
+    SNS.publish(params, (err, data) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(data);
+    });
   });
 
-  return defer.promise;
 }
 
 module.exports = {

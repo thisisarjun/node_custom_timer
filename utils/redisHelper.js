@@ -1,4 +1,3 @@
-const q = require('q');
 const redis = require('redis');
 
 function createClient(port, host){
@@ -7,105 +6,97 @@ function createClient(port, host){
 
 }
 
-function fetchKey(redisClient, key){
-	var defer = q.defer();
+function fetchKey(redisClient, key){	
 
-	redisClient.get(key, (err, data) => {
+	return new Promise((resolve, reject) => {
+		redisClient.get(key, (err, data) => {
 
-		if(err){
-			return defer.reject(err);
-		}else{			
-			return defer.resolve(data);
-		}
-	});
-
-	return defer.promise;
+			if(err){
+				reject(err);
+			}else{			
+				resolve(data);
+			}
+		});
+	});	
 }
 
 function setKey(redisClient, key, value){
-	var defer = q.defer();
 
-	redisClient.set(key, value, (err, data) => {
+	return new Promise((resolve, reject) => {
+		redisClient.set(key, value, (err, data) => {
 
-		if(err){
-			return defer.reject(err);
-		}else{			
-			return defer.resolve(data);
-		}
+			if(err){
+				reject(err);
+			}else{			
+				resolve(data);
+			}
+		});
 	});
 
-	return defer.promise;
 }
 
 
 function checkIfKeyExists(redisClient, timer_key, key){
-
-	var defer = q.defer();
+	
 	var isExist;
 	
-	redisClient.zscore(timer_key, key, (err, exists) => {
-
-		if(err){
-			return defer.reject(err);
-		}else{
-			isExist = !!exists;
-			return defer.resolve(isExist);
-		}
+	return new Promise((resolve, reject) => {
+		redisClient.zscore(timer_key, key, (err, exists) => {
+			if(err){
+				return reject(err);
+			}else{
+				isExist = !!exists;
+				return resolve(isExist);
+			}
+		});
 	});
-
-	return defer.promise;
+	
 }
 
 function addKey(redisClient, args){
 
-	var defer = q.defer();
+	return new Promise((resolve, reject) => {
+		redisClient.zadd(args, (err, data) => {
 
-	redisClient.zadd(args, (err, data) => {
-
-		if(err){
-			return defer.reject(err);
-		}else{			
-			return defer.resolve(data);
-		}
+			if(err){
+				return reject(err);
+			}else{			
+				return resolve(data);
+			}
+		});
 	});
-
-	return defer.promise;
-
 }
 
 function removeKey(redisClient, timer_key, key){
 
-	var defer = q.defer();
 
-	redisClient.zrem(timer_key, key, (err, data) => {
+	return new Promise((resolve, reject) => {
+		redisClient.zrem(timer_key, key, (err, data) => {
 
-		if(err){
-			return defer.reject(err);
-		}else{			
-			return defer.resolve(data);
-		}
+			if(err){
+				return reject(err);
+			}else{			
+				return resolve(data);
+			}
+		});
 	});
-
-	return defer.promise;
 
 }
 
 function getKeysInRange(redisClient, timer_key, min = '-inf', max = 1){	
 
-	var defer = q.defer();
 
+	return new Promise((resolve, reject) => {
+		let args = [timer_key, min, max];
+		redisClient.zrangebyscore(args, (err, data) => {
+			if(err){
+				return reject(err);
+			}else{			
+				return resolve(data);
+			}
+		});
+	});	
 
-	let args = [timer_key, min, max];
-	redisClient.zrangebyscore(args, (err, data) => {
-
-		if(err){
-			return defer.reject(err);
-		}else{			
-			return defer.resolve(data);
-		}
-	});
-
-	return defer.promise;
 }
 
 

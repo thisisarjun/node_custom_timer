@@ -1,12 +1,11 @@
-let options = {
-	redisPort:6379,
-	redisHost: 'localhost',
-	topic: 'topic_arn',
-	awsAccessKeyId:'accesskey',
-	awsSecretAccessKey: 'secret',
-	awsRegion: 'region',
-	timerKey: 'tester'
-
+let options = {	
+    redisPort:6379,
+    redisHost: 'localhost',
+    topic: 'arn:aws:sns:us-east-2:316321551255:dummy_local',
+    awsAccessKeyId:'AKIAUTJR32OL4EOPFRNY',
+    awsSecretAccessKey: 'NYn9dDPwBon3pRfOMhbuL9FtHyVxN/PNs3CyJ2xz',
+    awsRegion: 'us-east-2',
+    timerKey: 'tester'
 };
 
 let node_timer = require('../index');
@@ -22,6 +21,7 @@ nodeTimer.addTimerEvent(key, time).then(() => {
 setInterval(async () => {
 	try{
 		await nodeTimer.processTimer();
+		console.log('successfully bla bla');
 	}catch(err){
 		console.error("err ", err);
 	}

@@ -80,6 +80,7 @@ class nodeTimer {
 		let promises = [];
 
 		keys.forEach((key) => {				
+			// insert non duplicate keys
 			(this.non_deleted_keys.indexOf(key) < 0) && promises.push(publishMessage(this.SNS, key, this.topic));
 		});
 
