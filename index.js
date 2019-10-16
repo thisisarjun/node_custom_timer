@@ -11,7 +11,6 @@ const {
 } = require('./utils/redisHelper');
 const TIMER_KEY = 'node_timer_key';
 const SNS_SUBJECT = 'timer_alert';
-const q = require('q');
 
 
 class nodeTimer {
@@ -45,8 +44,6 @@ class nodeTimer {
 		this.aws.secretAccessKey = options.awsSecretAccessKey;
 		this.aws.region = options.awsRegion;
 		this.SNS = createSNSObject(this.aws);
-
-		this.errored_keys = [];
 		this.non_deleted_keys = []; //keys to be deleted, which failed in the last tick
 		this.timerKey = options.timerKey || TIMER_KEY;
 		this.topic = options.topic;
@@ -77,40 +74,37 @@ class nodeTimer {
 		let max = currentTime;			
 
 		let keys = await getKeysInRange(this.redisClient, this.timerKey, min, max);
-		let promises = [];
+		let promises = [];		
 
-		keys.forEach((key) => {				
-			// insert non duplicate keys
+		keys.forEach((key) => {			
+			// publish those keys that are not published yet
 			(this.non_deleted_keys.indexOf(key) < 0) && promises.push(publishMessage(this.SNS, key, this.topic));
 		});
 
-		if(promises.length == 0){
-			return;
+		let erroredKeys = [], toDelKeys = [];				
+		if(promises.length > 0){
+
+			promises = promises.map(p => p.catch(e => e));			
+			let results = await Promise.all(promises);
+			results.forEach((result) => {
+				if(result.erroredKey){
+					return erroredKeys.push(result.erroredKey);
+				}
+			});			
 		}
 
-		let results = await q.allSettled(promises);
-
-		let successKeys = [], erroredKeys = [];
-		results.forEach((result) => {
-			if(result.state == 'fulfilled'){
-				successKeys.push(result.value);
-			}else{
-				erroredKeys.push(result);
-			}	
-		});			
-
+		toDelKeys = keys.filter(key =>  erroredKeys.indexOf(key) < 0);
 		try{
-			if(successKeys.length > 0){
-				await removeKey(this.redisClient, this.timerKey, this.non_deleted_keys.concat(successKeys));
+			if(toDelKeys.length > 0 || this.non_deleted_keys.length > 0){
+				await removeKey(this.redisClient, this.timerKey, this.non_deleted_keys.concat(toDelKeys));
 				this.non_deleted_keys = [];
 			}
-		}catch(err){
-			this.non_deleted_keys = this.non_deleted_keys.concat(successKeys);
-			this.non_deleted_keys.filter((value, index, arr) => arr.indexOf(value) == index); //only unique elements
+		}catch(err){ //failed to remove from redis
+			toDelKeys.forEach(key => this.non_deleted_keys.indexOf(key) < 0 && this.non_deleted_keys.push(key));
 		}			
 
 		if(erroredKeys.length > 0){ // do not delete these, the events should be published in the next tick				
-			throw new Error('Failed to Publish Event for following keys ' + JSON.stringify(erroredKeys));
+			throw new Error('Failed to Publish Event for following keys ' + erroredKeys.join(' | '));
 		}
 						
 		

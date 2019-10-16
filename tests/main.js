@@ -70,6 +70,14 @@ describe("Process Timer", () => {
 	it("it should be successfull if everything is successfull", async () => {
 		
 		try{
+			nodeTimer = new timer({
+				redisPort: 6379,
+				redisHost: 'localhost',
+				awsAccessKeyId: 'bka',
+				awsSecretAccessKey: 'asdasd',
+				awsRegion: 'bla',
+				topic: 'blabla'
+			});
 			await nodeTimer.processTimer();			
 		}catch(err){
 			throw err;
@@ -80,6 +88,14 @@ describe("Process Timer", () => {
 		
 		let errorString = 'Critical error in redis';
 		try{
+			nodeTimer = new timer({
+				redisPort: 6379,
+				redisHost: 'localhost',
+				awsAccessKeyId: 'bka',
+				awsSecretAccessKey: 'asdasd',
+				awsRegion: 'bla',
+				topic: 'blabla'
+			});
 			let stub = sinon.stub();			
 			stub.rejects(new Error(errorString));
 			timer.__set__('getKeysInRange', stub);			
@@ -113,28 +129,101 @@ describe("Process Timer", () => {
 	it("If publishMessage throw errors are there, it should throw an error", async () => {
 				
 		try{
+			nodeTimer = new timer({
+				redisPort: 6379,
+				redisHost: 'localhost',
+				awsAccessKeyId: 'bka',
+				awsSecretAccessKey: 'asdasd',
+				awsRegion: 'bla',
+				topic: 'blabla'
+			});
 			let publishStub = sinon.stub();	
-			publishStub.rejects('Errored');
+			let publishErr = new Error('errored');
+			publishErr.erroredKey = '1';
+			publishStub.rejects(publishErr);
 			timer.__set__('publishMessage', publishStub);			
 
 			let getKeysStub = sinon.stub();
 			getKeysStub.resolves(['1', '2', '3']);
 			timer.__set__('getKeysInRange', getKeysStub);			
 			await nodeTimer.processTimer();			
+			throw new Error('It shouldnt have run successfully');
+		}catch(err){	
+			assert.equal(err.message, 'Failed to Publish Event for following keys ' + [1,1,1].join(' | '));						
+		}
+	});
 
-		}catch(err){			
-			assert.equal(err.message, 'Failed to Publish Event for following keys 1,2,3');						
+	it('Should not call removeKeys if all the keys failed in publishing event', async () => {
+		let removeKeyStub;
+		try{
+			nodeTimer = new timer({
+				redisPort: 6379,
+				redisHost: 'localhost',
+				awsAccessKeyId: 'bka',
+				awsSecretAccessKey: 'asdasd',
+				awsRegion: 'bla',
+				topic: 'blabla'
+			});
+			let publishStub = sinon.stub();	
+			let publishErr = new Error('errored');
+			publishErr.erroredKey = '1';
+			publishStub.rejects(publishErr);
+			timer.__set__('publishMessage', publishStub);			
+
+			let getKeysStub = sinon.stub();
+			getKeysStub.resolves(['1', '1', '1']);
+			timer.__set__('getKeysInRange', getKeysStub);			
+
+			removeKeyStub = sinon.stub();
+			removeKeyStub.rejects(new Error('duck'));
+			timer.__set__('removeKey', removeKeyStub);			
+			await nodeTimer.processTimer();	
+
+		}catch(err){ // error will be thrown
+			assert.equal(removeKeyStub.callCount, 0);
+		}
+	});
+
+	it('Should call removeKeys if all the keys were successfull', async () => {
+		let removeKeyStub;
+		try{			
+			nodeTimer = new timer({
+				redisPort: 6379,
+				redisHost: 'localhost',
+				awsAccessKeyId: 'bka',
+				awsSecretAccessKey: 'asdasd',
+				awsRegion: 'bla',
+				topic: 'blabla'
+			});
+			let getKeysStub = sinon.stub();
+			let fetchedKeys = ['1', '2', '3'];
+			getKeysStub.resolves(fetchedKeys);
+			timer.__set__('getKeysInRange', getKeysStub);			
+
+			removeKeyStub = sinon.stub();
+			removeKeyStub.rejects(new Error('duck'));
+			timer.__set__('removeKey', removeKeyStub);			
+			await nodeTimer.processTimer();	
+			assert.equal(removeKeyStub.callCount, 1);
+			assert.deepEqual(removeKeyStub.getCalls(0)[0].args[2], fetchedKeys);
+		}catch(err){ // error will be thrown
+			throw err;
 		}
 	});
 
 
+
 	it("If removing from redis throws an error, non_deleted_keys should be populated with the keys", async () => {
 
-		console.log("---");
-		console.log("---");
-		console.log("---");
 		try{					
-
+			nodeTimer = new timer({
+				redisPort: 6379,
+				redisHost: 'localhost',
+				awsAccessKeyId: 'bka',
+				awsSecretAccessKey: 'asdasd',
+				awsRegion: 'bla',
+				topic: 'blabla'
+			});
 			let getKeysStub = sinon.stub();
 			getKeysStub.resolves(['1', '2', '3']);
 			timer.__set__('getKeysInRange', getKeysStub);
@@ -154,7 +243,14 @@ describe("Process Timer", () => {
 
 	it("for consecutive runs, no duplicate keys for non_deleted_keys", async () => {
 		try{					
-
+			nodeTimer = new timer({
+				redisPort: 6379,
+				redisHost: 'localhost',
+				awsAccessKeyId: 'bka',
+				awsSecretAccessKey: 'asdasd',
+				awsRegion: 'bla',
+				topic: 'blabla'
+			});
 			let getKeysStub = sinon.stub();
 			getKeysStub.resolves(['1', '2', '3']);
 			timer.__set__('getKeysInRange', getKeysStub);

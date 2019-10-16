@@ -69,7 +69,6 @@ function addKey(redisClient, args){
 
 function removeKey(redisClient, timer_key, key){
 
-
 	return new Promise((resolve, reject) => {
 		redisClient.zrem(timer_key, key, (err, data) => {
 

@@ -15,7 +15,6 @@
   "homepage": "https://bitbucket.org/tricog/node_timer#readme",
   "dependencies": {
     "aws-sdk": "^2.521.0",
-    "q": "^1.5.1",
     "redis": "^2.8.0"
   },
   "devDependencies": {

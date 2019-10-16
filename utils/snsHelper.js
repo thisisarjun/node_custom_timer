@@ -24,7 +24,8 @@ function publishMessage (SNS, message, topic, subject) {
     }
 
     SNS.publish(params, (err, data) => {
-      if (err) {
+      if (err) {        
+        err.erroredKey = message;
         return reject(err);
       }
       resolve(data);
