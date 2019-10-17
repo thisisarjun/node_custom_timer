@@ -48,6 +48,8 @@ class nodeTimer {
 		this.timerKey = options.timerKey || TIMER_KEY;
 		this.topic = options.topic;
 		this.subject = options.subject || SNS_SUBJECT;
+		this.timer = null;
+		this.timeout = options.timeout || 2500;
 	}
 
 	async addTimerEvent(key, time){
@@ -106,10 +108,15 @@ class nodeTimer {
 		if(erroredKeys.length > 0){ // do not delete these, the events should be published in the next tick				
 			throw new Error('Failed to Publish Event for following keys ' + erroredKeys.join(' | '));
 		}
-						
-		
+								
+	}
 
+	addTimer(){
+		this.timer = setInterval(this.processTimer, this.timeout);		
+	}
 
+	stopTimer(){
+		clearInterval(this.timer);
 	}
 
 
