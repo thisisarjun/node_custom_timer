@@ -11,6 +11,7 @@ const {
 } = require('./utils/redisHelper');
 const TIMER_KEY = 'node_timer_key';
 const SNS_SUBJECT = 'timer_alert';
+const debug = require('debug')('timer');
 
 
 class nodeTimer {
@@ -70,7 +71,7 @@ class nodeTimer {
 	}
 
 	async processTimer(){
-
+		debug('tick started');
 		let currentTime = new Date().getTime();
 		let min = 0;
 		let max = currentTime;			
@@ -78,6 +79,7 @@ class nodeTimer {
 		let keys = await getKeysInRange(this.redisClient, this.timerKey, min, max);
 		let promises = [];		
 
+		debug('fetched Keys : ', JSON.stringify(keys));
 		keys.forEach((key) => {			
 			// publish those keys that are not published yet
 			(this.non_deleted_keys.indexOf(key) < 0) && promises.push(publishMessage(this.SNS, key, this.topic));
@@ -104,7 +106,7 @@ class nodeTimer {
 		}catch(err){ //failed to remove from redis
 			toDelKeys.forEach(key => this.non_deleted_keys.indexOf(key) < 0 && this.non_deleted_keys.push(key));
 		}			
-
+		debug('tick ended');
 		if(erroredKeys.length > 0){ // do not delete these, the events should be published in the next tick				
 			throw new Error('Failed to Publish Event for following keys ' + erroredKeys.join(' | '));
 		}
@@ -112,10 +114,13 @@ class nodeTimer {
 	}
 
 	addTimer(){
-		this.timer = setInterval(this.processTimer, this.timeout);		
+		debug('starting timer');
+		this.timer = setInterval(this.processTimer.bind(this), this.timeout);		
+
 	}
 
 	stopTimer(){
+		debug('timer stopped');
 		clearInterval(this.timer);
 	}
 
